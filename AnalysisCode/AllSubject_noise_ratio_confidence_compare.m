@@ -1,9 +1,9 @@
 clear all; close all; clc;
-boots = 100;% number of bootstraps to get PK
+boots = 500;% number of bootstraps to get PK
 
-hpr_ridge = logspace(-3, 3, 7);
+hpr_ridge = logspace(-1, 5, 7);
 hpr_ar1 = 0.0;
-hpr_curvature = logspace(-3, 3, 7);
+hpr_curvature = logspace(-1, 5, 7);
 expt_type_noise = 2;
 expt_type_ratio = 1;
 standardize = 0; % z-score data or not
@@ -28,11 +28,9 @@ subjects_id = {'subj 1';'subj 2';'subj 3';'subj 4'; 'subj 5'; 'subj 6';'subj 7';
 [num_sub,~] = size(subjects);
 
 disp('Starting to find best hyperparameters for NOISE condition data across subjects....');
-% [best_hprs_noise] = CustomRegression.combined_hprs_search(subjects,expt_type_noise,hpr_ridge,hpr_ar1,hpr_curvature,standardize,folds,dir);
-best_hprs_noise = [1 0 443.6687];
+[best_hprs_noise] = CustomRegression.combined_hprs_search(subjects,expt_type_noise,hpr_ridge,hpr_ar1,hpr_curvature,standardize,folds,dir);
 disp('Starting to find best hyperparameters for RATIO condition data across subjects....');
-% [best_hprs_ratio] = CustomRegression.combined_hprs_search(subjects,expt_type_ratio,hpr_ridge,hpr_ar1,hpr_curvature,standardize,folds,dir);
-best_hprs_ratio = [17.1907 0 5.08022];
+[best_hprs_ratio] = CustomRegression.combined_hprs_search(subjects,expt_type_ratio,hpr_ridge,hpr_ar1,hpr_curvature,standardize,folds,dir);
 %%
 for i=1:(num_sub)
     tic;
@@ -65,7 +63,7 @@ for i=1:(num_sub)
         confidence_wrt_accuracy_err(i,j,:) = confidence_resp_err;
         trials_accuracy_confidence_compare(i,j,:) = ntrial_subj;
         alpha(i,j,:) = [prctile(1e-4+(1-1e-4) * sigmoid(params_boot(:,end)), 50) std(1e-4+(1-1e-4) * sigmoid(params_boot(:,end)))/sqrt(size(params_boot,1))];
-%         alpha(i,j,:) = [prctile(params_boot(:,end).^2, 50) std(params_boot(:,end).^2)/sqrt(size(params_boot,1))];
+        %         alpha(i,j,:) = [prctile(params_boot(:,end).^2, 50) std(params_boot(:,end).^2)/sqrt(size(params_boot,1))];
         bias(i,j) = prctile(params_boot(:, end-1), 50);
         temporal_kernel(i,j,:) = prctile(params_boot(:, 1:num_frames), 50);
         norm_temporal_kernel(i,j,:) = temporal_kernel(i,j,:)/mean(temporal_kernel(i,j,:));
@@ -166,91 +164,69 @@ for i=1:(num_sub)
     disp('-----------------------------------------------------------------------------------------------------');
 end
 hold off;
-%% Subjectwise plots
-for i=1:(num_sub)
-    figure();
-    for j=1:cases
-        phase = 3-j;
-        data = data_sub{i,j};
-        subplot(cases,3,3+3*(j-1))
-        errorbar(1:num_frames,squeeze(temporal_kernel(i,j,1:num_frames)),squeeze(lo_temporal_kernel(i,j,:)),squeeze(hi_temporal_kernel(i,j,:)),'k','LineWidth',1)
-        xlabel('Frames');
-        ylabel('Weights');
-        axis('tight');
-        
-        if phase==2
-            subplot(cases,3,1+3*(j-1))
-            plot((1:length(data.noise)), data.noise);
-            hold on;
-            plot(linspace(1,length(data.noise),100),confidence_threshold(i,j) * ones(1,100),'r','LineWidth',1);
-            xlabel('Trials');
-            ylabel('Noise Level');
-            axis('tight');
-            
-            subplot(cases,3,2+3*(j-1))
-            bins = 10;
-            subject_pm_curve =[];
-            uniq_vals = linspace(-0.8,0.8,bins);
-            tr_kappa = data.sign_noise;
-            noise_signal = data.ideal_frame_signals;
-            for tt=1:(length(uniq_vals)-1)
-                subj_resp(i,j,tt) = mean(data.choice(tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1)));
-                ntrial_subj(i,j,tt) = sum(tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1));
-            end
-            noise_vals = uniq_vals(1:end-1) + (uniq_vals(2) - uniq_vals(1))/2;
-            errorbar(noise_vals,squeeze(subj_resp(i,j,:)),squeeze((subj_resp(i,j,:)).*(1-subj_resp(i,j,:))./sqrt(ntrial_subj(i,j,:))),'o');
-            subject_pm_curve = (1./(1+exp(-(noise_signal*squeeze(temporal_kernel(i,j,:))+bias(i,j)))))*( 1-(alpha(i,j,1)))+(alpha(i,j,1)/2);
-            for tt=1:(length(uniq_vals)-1)
-                subj_resp_pred(i,j,tt) = mean(subject_pm_curve(((tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1)))));
-                ntrial_subj_pred(i,j,tt) = sum(tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1));
-            end
-            hold on;
-            plot(noise_vals,squeeze(subj_resp_pred(i,j,:)),'Linewidth',2);
-            yline(0.5,'--k');
-            xline(0.0,'--k');
-            xlabel('Signed Kappa');
-            ylabel('Percent chose left');
-            xlim([-0.8 0.8])
-            ylim([0.0 1.0])
-        else
-            subplot(cases,3,1+3*(j-1))
-            plot((1:length(data.ratio)), data.ratio);
-            hold on;
-            plot(linspace(1,length(data.ratio),100),confidence_threshold(i,j) * ones(1,100),'r','LineWidth',1);
-            xlabel('Trials');
-            ylabel('Ratio Level');
-            axis('tight');
-            
-            subplot(cases,3,2+3*(j-1))
-            bins = 10;
-            subject_pm_curve = [];
-            uniq_vals = linspace(0,1,bins);
-            tr_ratio = data.true_ratio;
-            noise_signal = sign(data.ideal_frame_signals);
-            for tt=1:(length(uniq_vals)-1)
-                subj_resp(i,j,tt) = mean(data.choice(tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1)));
-                ntrial_subj(i,j,tt) = sum(tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1));
-            end
-            ratio_vals = uniq_vals(1:end-1) + (uniq_vals(2) - uniq_vals(1))/2;
-            errorbar(ratio_vals,squeeze(subj_resp(i,j,:)),squeeze((subj_resp(i,j,:)).*(1-subj_resp(i,j,:))./sqrt(ntrial_subj(i,j,:))),'o');
-            subject_pm_curve = (1./(1+exp(-(noise_signal*squeeze(temporal_kernel(i,j,:))+bias(i,j)))))*( 1-(alpha(i,j,1)))+(alpha(i,j,1)/2);
-            for tt=1:(length(uniq_vals)-1)
-                subj_resp_pred(i,j,tt) = mean(subject_pm_curve(((tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1)))));
-                ntrial_subj_pred(i,j,tt) = sum(tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1));
-            end
-            hold on;
-            plot(ratio_vals,squeeze(subj_resp_pred(i,j,:)),'Linewidth',2);
-            yline(0.5,'--k');
-            xline(0.5,'--k');
-            xlabel('Left Ratio');
-            ylabel('Percent chose left');
-            xlim([0.0 1.0])
-            ylim([0.0 1.0])
-        end
-    end
-    sgtitle(['Top Row: Noise (' num2str(confidence_trials_under_threshold(i,1)) ' trials)' ' and Bottom Row: Ratio (' num2str(confidence_trials_under_threshold(i,2)) ' trials)'  ' for Subject ' num2str(i)]);
-end
 %%
+figure();
+j=2;
+bins = 10;
+subject_pm_curve =[];
+uniq_vals = linspace(-0.8,0.8,bins);
+for i=1:num_sub
+    subplot(2,5,i)
+    tr_kappa = data_sub{i,j}.sign_noise;
+    noise_signal = data_sub{i,j}.ideal_frame_signals;
+    for tt=1:(length(uniq_vals)-1)
+        subj_resp(i,j,tt) = mean(data_sub{i,j}.choice(tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1)));
+        ntrial_subj(i,j,tt) = sum(tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1));
+    end
+    noise_vals = uniq_vals(1:end-1) + (uniq_vals(2) - uniq_vals(1))/2;
+    errorbar(noise_vals,squeeze(subj_resp(i,j,:)),squeeze((subj_resp(i,j,:)).*(1-subj_resp(i,j,:))./sqrt(ntrial_subj(i,j,:))),'ob','Linestyle','none','linewidth',2);
+    subject_pm_curve = alpha(i,j,1) * 0.5 + (1 - alpha(i,j,1)) * sigmoid(bias(i,j) + noise_signal*squeeze(temporal_kernel(i,j,:)));
+    for tt=1:(length(uniq_vals)-1)
+        subj_resp_pred(i,j,tt) = mean(subject_pm_curve(((tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1)))));
+        ntrial_subj_pred(i,j,tt) = sum(tr_kappa>uniq_vals(tt)&tr_kappa<=uniq_vals(tt+1));
+    end
+    hold on;
+    err = sqrt((squeeze(subj_resp_pred(i,j,:)) .*(1-squeeze(subj_resp_pred(i,j,:))))./squeeze(ntrial_subj_pred(i,j,:)));
+    errorbar(noise_vals,squeeze(subj_resp_pred(i,j,:)),err,'-or','Linewidth',2);
+    yline(0.5,'--k');
+    xline(0.0,'--k');
+    xlabel('Signed Kappa');
+    ylabel('Percent chose left');
+    xlim([-0.8 0.8])
+    ylim([0.0 1.0])
+end
+
+j=1;
+figure();
+bins = 10;
+subject_pm_curve = [];
+uniq_vals = linspace(0,1,bins);
+for i=1:num_sub
+    subplot(2,5,i)
+    tr_ratio = data_sub{i,j}.true_ratio;
+    noise_signal = sign(data_sub{i,j}.ideal_frame_signals);
+    for tt=1:(length(uniq_vals)-1)
+        subj_resp(i,j,tt) = mean(data_sub{i,j}.choice(tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1)));
+        ntrial_subj(i,j,tt) = sum(tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1));
+    end
+    ratio_vals = uniq_vals(1:end-1) + (uniq_vals(2) - uniq_vals(1))/2;
+    errorbar(ratio_vals,squeeze(subj_resp(i,j,:)),squeeze((subj_resp(i,j,:)).*(1-subj_resp(i,j,:))./sqrt(ntrial_subj(i,j,:))),'ob','Linestyle','none','linewidth',2);
+    subject_pm_curve = alpha(i,j,1) * 0.5 + (1 - alpha(i,j,1)) * sigmoid(bias(i,j) + noise_signal*squeeze(temporal_kernel(i,j,:)));
+    for tt=1:(length(uniq_vals)-1)
+        subj_resp_pred(i,j,tt) = mean(subject_pm_curve(((tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1)))));
+        ntrial_subj_pred(i,j,tt) = sum(tr_ratio>uniq_vals(tt)&tr_ratio<=uniq_vals(tt+1));
+    end
+    hold on;
+    err = sqrt((squeeze(subj_resp_pred(i,j,:)) .*(1-squeeze(subj_resp_pred(i,j,:))))./squeeze(ntrial_subj_pred(i,j,:)));
+    errorbar(ratio_vals,squeeze(subj_resp_pred(i,j,:)),err,'-or','Linewidth',2);
+    yline(0.5,'--k');
+    xline(0.5,'--k');
+    xlabel('Left Ratio');
+    ylabel('Percent chose left');
+    xlim([0.0 1.0])
+    ylim([0.0 1.0])
+end
+
 %%
 bin_num = 15;
 figure();
@@ -644,7 +620,7 @@ for i=1:(num_sub)
     errorbar(squeeze(subj_accuracy_mean(i,1,:)),squeeze(confidence_wrt_accuracy(i,1,:)),squeeze(subj_accuracy_err(i,j,:)), 'horizontal', 'LineStyle', 'none','Color','k');
     hold on;
     errorbar(squeeze(subj_accuracy_mean(i,1,:)),squeeze(confidence_wrt_accuracy(i,1,:)),squeeze(confidence_wrt_accuracy_err(i,j,:)), 'vertical', 'LineStyle', 'none','Color','k');
-    hold on;    
+    hold on;
 end
 xlabel('Accuracy');
 ylabel('Confidence');
@@ -1571,22 +1547,22 @@ legend(LH,L, 'Fontsize',20, 'Box','off');
 
 subplot(1,2,2)
 for sb=1:num_sub
-%     l1(sb) = prctile(squeeze(confidence(sb,1,:)), 50) - prctile(squeeze(confidence(sb,1,:)), 16);
-%     h1(sb) = prctile(squeeze(confidence(sb,1,:)), 84) - prctile(squeeze(confidence(sb,1,:)), 50);
-%     l2(sb) = prctile(squeeze(confidence(sb,2,:)), 50) - prctile(squeeze(confidence(sb,2,:)), 16);
-%     h2(sb) = prctile(squeeze(confidence(sb,2,:)), 84) - prctile(squeeze(confidence(sb,2,:)), 50);
+    %     l1(sb) = prctile(squeeze(confidence(sb,1,:)), 50) - prctile(squeeze(confidence(sb,1,:)), 16);
+    %     h1(sb) = prctile(squeeze(confidence(sb,1,:)), 84) - prctile(squeeze(confidence(sb,1,:)), 50);
+    %     l2(sb) = prctile(squeeze(confidence(sb,2,:)), 50) - prctile(squeeze(confidence(sb,2,:)), 16);
+    %     h2(sb) = prctile(squeeze(confidence(sb,2,:)), 84) - prctile(squeeze(confidence(sb,2,:)), 50);
     l1(sb) = prctile(squeeze(confidence(sb,1,:))', 50) - prctile(squeeze(confidence(sb,1,:))', 2.5);
     h1(sb) = prctile(squeeze(confidence(sb,1,:))', 97.5) - prctile(squeeze(confidence(sb,1,:))', 50);
     l2(sb) = prctile(squeeze(confidence(sb,2,:))', 50) - prctile(squeeze(confidence(sb,2,:))', 2.5);
     h2(sb) = prctile(squeeze(confidence(sb,2,:))', 97.5) - prctile(squeeze(confidence(sb,2,:))', 50);
-%     [mn1(sb),l1(sb),h1(sb),~] = meanci(squeeze(confidence(sb,1,:)),0.95);%0.67);
-%     [mn2(sb),l2(sb),h2(sb),~] = meanci(squeeze(confidence(sb,2,:)),0.95);%0.67);
+    %     [mn1(sb),l1(sb),h1(sb),~] = meanci(squeeze(confidence(sb,1,:)),0.95);%0.67);
+    %     [mn2(sb),l2(sb),h2(sb),~] = meanci(squeeze(confidence(sb,2,:)),0.95);%0.67);
     v1(sb) = var(squeeze(confidence(sb,1,:)));
     v2(sb) = var(squeeze(confidence(sb,2,:)));
-%     l1(sb) = mn1(sb) - l1(sb);
-%     h1(sb) = h1(sb) - mn1(sb);
-%     l2(sb) = mn2(sb) - l2(sb);
-%     h2(sb) = h2(sb) - mn2(sb);
+    %     l1(sb) = mn1(sb) - l1(sb);
+    %     h1(sb) = h1(sb) - mn1(sb);
+    %     l2(sb) = mn2(sb) - l2(sb);
+    %     h2(sb) = h2(sb) - mn2(sb);
 end
 hold on;
 errorbar(mn1,mn2,l1,h1, 'horizontal', 'LineStyle', 'none','color', 'r','linewidth',3);
@@ -1672,7 +1648,7 @@ for sub=1:num_sub
     l_beta_diff(sub) = prctile(squeeze(beta_diff(sub,:)), 50) - prctile(squeeze(beta_diff(sub,:)), 2.5);
     h_beta_diff(sub) = prctile(squeeze(beta_diff(sub,:)), 97.5) - prctile(squeeze(beta_diff(sub,:)), 50);
     l_slope_diff(sub) = prctile(squeeze(norm_slope_diff(sub,:)), 50) - prctile(squeeze(norm_slope_diff(sub,:)), 2.5);
-    h_slope_diff(sub) = prctile(squeeze(norm_slope_diff(sub,:)), 97.5) - prctile(squeeze(norm_slope_diff(sub,:)), 50);   
+    h_slope_diff(sub) = prctile(squeeze(norm_slope_diff(sub,:)), 97.5) - prctile(squeeze(norm_slope_diff(sub,:)), 50);
 end
 
 
@@ -1904,22 +1880,22 @@ legend(LH,L, 'Fontsize',20, 'Box','off');
 
 subplot(2,2,3)
 for sb=1:num_sub
-%     l1(sb) = prctile(squeeze(confidence(sb,1,:)), 50) - prctile(squeeze(confidence(sb,1,:)), 16);
-%     h1(sb) = prctile(squeeze(confidence(sb,1,:)), 84) - prctile(squeeze(confidence(sb,1,:)), 50);
-%     l2(sb) = prctile(squeeze(confidence(sb,2,:)), 50) - prctile(squeeze(confidence(sb,2,:)), 16);
-%     h2(sb) = prctile(squeeze(confidence(sb,2,:)), 84) - prctile(squeeze(confidence(sb,2,:)), 50);
+    %     l1(sb) = prctile(squeeze(confidence(sb,1,:)), 50) - prctile(squeeze(confidence(sb,1,:)), 16);
+    %     h1(sb) = prctile(squeeze(confidence(sb,1,:)), 84) - prctile(squeeze(confidence(sb,1,:)), 50);
+    %     l2(sb) = prctile(squeeze(confidence(sb,2,:)), 50) - prctile(squeeze(confidence(sb,2,:)), 16);
+    %     h2(sb) = prctile(squeeze(confidence(sb,2,:)), 84) - prctile(squeeze(confidence(sb,2,:)), 50);
     l1(sb) = prctile(squeeze(confidence(sb,1,:))', 50) - prctile(squeeze(confidence(sb,1,:))', 2.5);
     h1(sb) = prctile(squeeze(confidence(sb,1,:))', 97.5) - prctile(squeeze(confidence(sb,1,:))', 50);
     l2(sb) = prctile(squeeze(confidence(sb,2,:))', 50) - prctile(squeeze(confidence(sb,2,:))', 2.5);
     h2(sb) = prctile(squeeze(confidence(sb,2,:))', 97.5) - prctile(squeeze(confidence(sb,2,:))', 50);
-%     [mn1(sb),l1(sb),h1(sb),~] = meanci(squeeze(confidence(sb,1,:)),0.95);%0.67);
-%     [mn2(sb),l2(sb),h2(sb),~] = meanci(squeeze(confidence(sb,2,:)),0.95);%0.67);
+    %     [mn1(sb),l1(sb),h1(sb),~] = meanci(squeeze(confidence(sb,1,:)),0.95);%0.67);
+    %     [mn2(sb),l2(sb),h2(sb),~] = meanci(squeeze(confidence(sb,2,:)),0.95);%0.67);
     v1(sb) = var(squeeze(confidence(sb,1,:)));
     v2(sb) = var(squeeze(confidence(sb,2,:)));
-%     l1(sb) = mn1(sb) - l1(sb);
-%     h1(sb) = h1(sb) - mn1(sb);
-%     l2(sb) = mn2(sb) - l2(sb);
-%     h2(sb) = h2(sb) - mn2(sb);
+    %     l1(sb) = mn1(sb) - l1(sb);
+    %     h1(sb) = h1(sb) - mn1(sb);
+    %     l2(sb) = mn2(sb) - l2(sb);
+    %     h2(sb) = h2(sb) - mn2(sb);
 end
 hold on;
 errorbar(mn1,mn2,l1,h1, 'horizontal', 'LineStyle', 'none','color', 'r','linewidth',3);
