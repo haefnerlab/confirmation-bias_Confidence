@@ -6,8 +6,10 @@ function [floor, thresh, fit_result] = getThresholdWindow(data, phase, perf_lo, 
 if phase == 0
     stair_var = 'contrast';
 elseif phase == 1
+    phase_use = 1;
     stair_var = 'true_ratio';
 elseif phase == 2
+    phase_use = -2;
     stair_var = 'noise';
 else
     error('Expected phase 0 for Contrast or 1 for Ratio or 2 for Noise');
@@ -15,7 +17,7 @@ end
 
 SubjectData = data;
 % Use PM fit to get floor and threshold
-[fit_result, ~, ~, ~] = GaborPsychometric(SubjectData, phase);
+[fit_result, ~, ~, ~] = GaborPsychometric(SubjectData, phase_use);
 try
     floor = getThreshold(fit_result, perf_lo, false);
 catch

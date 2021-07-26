@@ -1,10 +1,10 @@
 % Range of values for category and sensory information
 ps = 0.51:0.02:0.99;
 THRESHOLD = 0.7;
-pts = 4;
+pts = 2;
 % Sampling model with gamma = 0.0
-params = Model.newModelParams('frames',10, 'model', 'is_temporal', 'var_x', 0.1, 'gamma', 0.0, 'noise', 0, 'trials', 10000, 'updates', 5, 'samples', 5);
-params_ideal = Model.newModelParams('frames',10, 'model', 'ideal', 'var_x', 0.1, 'gamma', 0.0, 'noise', 0, 'trials', 10000, 'updates', 5, 'samples', 5);
+params = Model.newModelParams('frames',10, 'model', 'is_temporal', 'var_x', 0.1, 'gamma', 0.0, 'noise', 0, 'trials', 10000, 'updates', 5, 'samples', 10);
+params_ideal = Model.newModelParams('frames',10, 'model', 'ideal', 'var_x', 0.1, 'gamma', 0.0, 'noise', 0, 'trials', 10000, 'updates', 5, 'samples', 10);
 %%
 beta_range = [-.32 .1]; % min and max beta expected (to get maximum use of colorbar range)
 disp('Loading/Running sampling model');
@@ -169,10 +169,10 @@ ax.YAxis.FontSize = 20;
 linkaxes([ax1, ax2, ax3, ax4], 'y')
 
 %%
-load('ModelPredictionsWithoutLeak.mat')
-wl = load('ModelPredictionsWithLeak.mat');
-load('ModelPredictionsWithoutLeak.mat');
-
+% load('ModelPredictionsWithoutLeakSamples5.mat')
+% wl = load('ModelPredictionsWithLeakSamples5.mat');
+% load('ModelPredictionsWithoutLeakSamples5.mat');
+%%
 figure()
 subplot(2,2,3)
 
@@ -232,7 +232,8 @@ set(ax, 'box','off');
 ax.XAxis.FontSize = 20;
 ax.YAxis.FontSize = 20;
 ylim([0 7]);
-
+%%
+figure()
 subplot(2,2,4)
 normalized = 1;
 % LH(1)=errorbar(1:params_lshc.frames, weights_lshc(1:end-1), errors_lshc(1:end-1),'linewidth',5,'color','r');
@@ -249,14 +250,14 @@ if normalized==1
     ylim([0.0 2]);
     ylabel('Temporal weights');
     hold on;
-    LH(3)=plot(1:params_lshc.frames, wl.weights_lshc(1:end-1)/mean(wl.weights_lshc(1:end-1)),'-o','linewidth',5,'color',[0.8500, 0.3250, 0.0980]);
-    L{3} = 'Approx. Inf model with leak (LSHC)';
-    hold on;
-    LH(4)=plot(1:params_hslc_ideal.frames, wl.weights_hslc(1:end-1)/mean(wl.weights_hslc(1:end-1)),'-o','linewidth',5,'color',[0.5843 0.8157 0.9882]);
-    L{4} = 'Approx. Inf model with leak (HSLC)';
-    ylim([0.0 2]);
-    ylabel('Temporal weights');
-    hold on;
+%     LH(3)=plot(1:params_lshc.frames, wl.weights_lshc(1:end-1)/mean(wl.weights_lshc(1:end-1)),'-o','linewidth',5,'color',[0.8500, 0.3250, 0.0980]);
+%     L{3} = 'Approx. Inf model with leak (LSHC)';
+%     hold on;
+%     LH(4)=plot(1:params_hslc_ideal.frames, wl.weights_hslc(1:end-1)/mean(wl.weights_hslc(1:end-1)),'-o','linewidth',5,'color',[0.5843 0.8157 0.9882]);
+%     L{4} = 'Approx. Inf model with leak (HSLC)';
+%     ylim([0.0 2]);
+%     ylabel('Temporal weights');
+%     hold on;
 else
     LH(1)=plot(1:params_lshc_ideal.frames, weights_lshc(1:end-1),'-o','linewidth',5,'color','r');
     L{1} = 'Model (LHSC)';
@@ -286,19 +287,19 @@ xlim([1 10]);
 if normalized==1
     w1 = weights_lshc_ideal(1:end-1)/mean(weights_lshc_ideal(1:end-1));
     w2 = weights_hslc_ideal(1:end-1)/mean(weights_lshc_ideal(1:end-1));
-%     LH(3)=plot(1:params_lshc_ideal.frames, weights_lshc_ideal(1:end-1)/mean(weights_lshc_ideal(1:end-1)),'--o','linewidth',5,'color',[0.5 0 0]);
-%     L{3} = 'Ideal(LHSC)';
-%     hold on;
-%     LH(4)=plot(1:params_hslc_ideal.frames, weights_hslc_ideal(1:end-1)/mean(weights_lshc_ideal(1:end-1)),'--o','linewidth',5,'color',[0 0 0.5]);
-%     L{4} = 'Ideal(HSLC)';
+    LH(3)=plot(1:params_lshc_ideal.frames, weights_lshc_ideal(1:end-1)/mean(weights_lshc_ideal(1:end-1)),'--o','linewidth',5,'color',[0.5 0 0]);
+    L{3} = 'Ideal(LHSC)';
+    hold on;
+    LH(4)=plot(1:params_hslc_ideal.frames, weights_hslc_ideal(1:end-1)/mean(weights_lshc_ideal(1:end-1)),'--o','linewidth',5,'color',[0 0 0.5]);
+    L{4} = 'Ideal(HSLC)';
     
-%     LH(3)=plot(1:params_lshc_ideal.frames, (w1+w2)/2,'--o','linewidth',5,'color',[0.5 0 0.5]);
-%     L{3} = 'Ideal observer(both LHSC and HSLC)';
-%     ylim([0.5 2.0]);
-%     ylabel({'Temporal weights'});
+    LH(3)=plot(1:params_lshc_ideal.frames, (w1+w2)/2,'--o','linewidth',5,'color',[0.5 0 0.5]);
+    L{3} = 'Ideal observer(both LHSC and HSLC)';
+    ylim([0.5 2.0]);
+    ylabel({'Temporal weights'});
     LH(5)=plot(1:params_lshc_ideal.frames, (w1+w2)/2,'--o','linewidth',5,'color',[0.5 0 0.5]);
     L{5} = 'Ideal observer (both LHSC and HSLC)';
-    ylim([0.5 2.0]);
+    ylim([0.0 2.0]);
     ylabel({'Temporal weights'});
 else
     LH(3)=plot(1:params_lshc_ideal.frames, weights_lshc_ideal(1:end-1),'-o','linewidth',5, 'color',[0.5 0 0]);
@@ -319,8 +320,7 @@ ax.XAxis.FontSize = 20;
 ax.YAxis.FontSize = 20;
 legend(LH,L,'box','off','fontsize',20);
 xlim([1 10]);
-ylim([0.25 3]);
-
+ylim([0.5 1.5]);
 
 n_trajectories = 100;
 ax1 = subplot(2,8,1);

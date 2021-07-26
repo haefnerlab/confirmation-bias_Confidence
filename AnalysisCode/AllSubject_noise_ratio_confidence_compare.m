@@ -1,5 +1,5 @@
 clear all; close all; clc;
-boots = 500;% number of bootstraps to get PK
+boots = 50;% number of bootstraps to get PK
 
 hpr_ridge = logspace(-1, 5, 7);
 hpr_ar1 = 0.0;
@@ -166,7 +166,7 @@ end
 hold off;
 %%
 figure();
-j=2;
+j=1;
 bins = 10;
 subject_pm_curve =[];
 uniq_vals = linspace(-0.8,0.8,bins);
@@ -196,7 +196,7 @@ for i=1:num_sub
     ylim([0.0 1.0])
 end
 
-j=1;
+j=2;
 figure();
 bins = 10;
 subject_pm_curve = [];
@@ -833,7 +833,7 @@ plot(linspace(-0.3,0.4,10),linspace(-0.3,0.4,10),'--k','LineWidth',1);
 hold on;
 xlabel('Accuracy Medium -  Accuracy Low');
 ylabel('Accuracy High -  Accuracy Medium');
-
+%%
 figure();
 for i=1:num_sub
     subplot(2,5,i)
@@ -845,7 +845,24 @@ for i=1:num_sub
     title( subjects_id{i})
     legend({'Noise condition';'Ratio Condition'})
 end
-
+figure();
+for i=1:num_sub
+    subplot(1,2,2)
+    plot([1 2 3],squeeze(confidence_hist(i,1,:)),'-ob','LineWidth',2)
+    hold on;
+    xticks([1 2 3]);
+    ylabel('Prob reported Confidence');
+    xlabel('Confidence');
+    title('Ratio Condition (HSLC)');
+    subplot(1,2,1)
+    plot([1 2 3],squeeze(confidence_hist(i,2,:)),'-or','LineWidth',2)
+    hold on;
+    xticks([1 2 3]);
+    ylabel('Prob reported Confidence');
+    xlabel('Confidence');
+    title( subjects_id{i})
+    title('Noise condition (LSHC)');
+end
 %%
 figure()
 subplot(2,4,3);
@@ -1200,10 +1217,10 @@ ax.YAxis.FontSize = 20;
 subplot(1,4,2);
 for i=1:(num_sub)
     plot(ratio_vals,squeeze(subj_resp_pred(i,2,:)),'b','Linewidth',0.5);
-    hold('on');
+    hold on;
 end
 plot(ratio_vals,squeeze(mean(subj_resp_pred(:,2,:),1)),'-ob','Linewidth',4);
-hold('on');
+hold on;
 yline(0.5,'k','Linewidth',1.5);
 hold on;
 xline(0.5,'k','Linewidth',1.5);
@@ -1866,7 +1883,7 @@ hold on;
 % xlabel('Accumulated evidence','Fontsize',20)
 ylabel({'Exponential slope parameter'; 'of weights'},'Fontsize',20)
 xlim([0.9 2.1]);
-ylim([-0.75 0.25]);
+ylim([-0.9 0.25]);
 set(gca, 'XTick', [1 2])
 set(gca, 'XTickLabel',{'LSHC' 'HSLC'});
 ax = gca;
@@ -1964,3 +1981,8 @@ ax.XAxis.FontSize = 20;
 ax.YAxis.FontSize = 20;
 ax.XTick = [1 2 3 4 5 6 7 8 9 10];
 hold on;
+
+%%
+close all;
+filename_save = strcat('SavedWorkspace/','ConfidenceAnalysis_',date);
+save(filename_save);

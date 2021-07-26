@@ -1,13 +1,13 @@
 clear all; close all; clc;
-load_all_subj = load('AllSubjectConfidenceRegressionDifferentHyprs_stnd_thresh.mat');
+load_all_subj = load('AllSubjectConfidenceRegressionDifferentHyprs.mat');
 boots = 500;% number of bootstraps to get PK
-thresh_trials_only = 1;
+thresh_trials_only = 0;
 % hpr_ridge = logspace(-1, 5, 7);
 % hpr_ar1 = 0.0;
 % hpr_curvature = logspace(-1, 5, 7);
 expt_type_noise = 2;
 expt_type_ratio = 1;
-standardize = 1; % z-score data or not
+standardize = 0; % z-score data or not
 folds = 10; % how many folds of cross validation
 num_frames = 10; % number of stimulus frames
 cases = 2; % ratio case and noise case, so 2 cases. phase 2 for noise and 1 ratio
@@ -78,12 +78,12 @@ set(f,'defaultLegendAutoUpdate','off');
 for cs=1:6
     subplot(2,3,cs);
     for i=1:(num_sub)
-        plot(1:num_frames,squeeze(norm_temporal_kernel(cs,i,1,1:num_frames)),'-or','LineWidth',0.2);
+        plot(1:num_frames,squeeze(norm_temporal_kernel(cs,i,1,1:num_frames)),'-r','LineWidth',0.2);
         cs1_sub(i,:) = squeeze(norm_temporal_kernel(cs,i,1,1:num_frames));
         xlabel('Frames');
         ylabel('Weights');
         hold('on');
-        plot(1:num_frames,squeeze(norm_temporal_kernel(cs,i,2,1:num_frames)),'-ob','LineWidth',0.2);
+        plot(1:num_frames,squeeze(norm_temporal_kernel(cs,i,2,1:num_frames)),'-b','LineWidth',0.2);
         cs2_sub(i,:) = squeeze(norm_temporal_kernel(cs,i,2,1:num_frames));
         legend({['noise trials'],['ratio trials']});
         title(['Noise Vs Ratio Stimulus for Subject ' num2str(i)])
@@ -91,9 +91,9 @@ for cs=1:6
         axis('tight');
     end
     yline(0.0,'k','linewidth',2);
-    %         plot(1:num_frames,mean(cs1_sub,1),'-or','LineWidth',2);
-    %         plot(1:num_frames,mean(cs2_sub,1),'-ob','LineWidth',2);
-    %     ylim([-10 10]);
+    plot(1:num_frames,mean(cs1_sub,1),'-or','LineWidth',2);
+    plot(1:num_frames,mean(cs2_sub,1),'-ob','LineWidth',2);
+    ylim([-5 5]);
     title(['Weights for ' conf_analysis{1}{1}{cs}.case ' comparison']);
 end
 % sgtitle('All types of temporal weights fit across subjects','fontsize',30);

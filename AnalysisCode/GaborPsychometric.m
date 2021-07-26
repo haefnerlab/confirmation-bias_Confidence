@@ -25,13 +25,12 @@ elseif phase == -3
 elseif phase == 1
     options.sigmoidName  = 'norm';
     options.expType      = 'YesNo';
-    
     % Count how often subject chose left at each ratio value.
     uniq_vals = unique(Data.true_ratio);
     
     % The next line exploits the fact that 'Left' is coded as 1 and 'right'
     % as 0, so mean() returns the fraction of left choices.
-    yvals = arrayfun(@(u) mean(Data.choice(Data.true_ratio == u)), uniq_vals);
+    yvals = arrayfun(@(u) sum(Data.choice(Data.true_ratio == u)), uniq_vals);
     num_trials_at_vals = arrayfun(@(u) sum(Data.true_ratio == u), uniq_vals);
     stderrs = arrayfun(@(u) std(Data.choice(Data.true_ratio == u)), uniq_vals) ./ sqrt(num_trials_at_vals);
 elseif phase == 2
@@ -49,7 +48,7 @@ elseif phase == -2
     options.expType      = 'YesNo';
 
     uniq_vals = unique(Data.sign_noise);
-    yvals = arrayfun(@(u) mean(Data.choice(Data.sign_noise == u) == +1), uniq_vals);
+    yvals = arrayfun(@(u) sum(Data.choice(Data.sign_noise == u) == +1), uniq_vals);
     num_trials_at_vals = arrayfun(@(u) sum(Data.sign_noise == u), uniq_vals);
     stderrs = arrayfun(@(u) std(Data.choice(Data.sign_noise == u) == +1), uniq_vals) ./ sqrt(num_trials_at_vals); 
 end

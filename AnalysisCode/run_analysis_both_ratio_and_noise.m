@@ -14,7 +14,8 @@ for k = 1:size(data.ideal_frame_signals, 1)
     choice_raw = [choice_raw data.choice(k)];
 end
 disp('Data preprocessing complete!!');
-
+disp(max(data.conf));
+disp(unique(data.conf));
 trials = size(choice_raw, 2);
 [confidence, conf_th, conf_trials, acc_m_l, acc_h_m] = ConfidenceCompute(data,expt_type);
 [subj_resp,subj_resp_err,confidence_resp,confidence_resp_err,ntrial_subj,conf_hist, conf_rt, choice_rt,direct_acc_conf] = computeConfidenceStatistics(data,expt_type);

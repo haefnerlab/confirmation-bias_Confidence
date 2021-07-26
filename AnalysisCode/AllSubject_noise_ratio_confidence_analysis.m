@@ -1,12 +1,12 @@
 clear all; close all; clc;
 boots = 500;% number of bootstraps to get PK
-thresh_trials_only = 1;
+thresh_trials_only = 0;
 hpr_ridge = logspace(-1, 5, 7);
 hpr_ar1 = 0.0;
 hpr_curvature = logspace(-1, 5, 7);
 expt_type_noise = 2;
 expt_type_ratio = 1;
-standardize = 1; % z-score data or not
+standardize = 0; % z-score data or not
 folds = 10; % how many folds of cross validation
 num_frames = 10; % number of stimulus frames
 cases = 2; % ratio case and noise case, so 2 cases. phase 2 for noise and 1 ratio
